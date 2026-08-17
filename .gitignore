@@ -1,0 +1,4 @@
+# Persistent browser data + downloads (created by setup.sh at runtime).
+# Lives in the repo folder so it survives container rebuilds, but must
+# never be committed - contains cookies, saved logins, downloaded files.
+persistent-data/

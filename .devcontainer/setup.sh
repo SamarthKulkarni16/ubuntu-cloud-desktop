@@ -140,4 +140,46 @@ CUSTOMHELPER
   exit 0
 )
 
+# --- Protect downloads, browser logins/cookies, and saved passwords from   ---
+# --- ever being lost, even in the (rare) case of a full container rebuild ---
+# --- (as opposed to a normal stop/resume, which already preserves         ---
+# --- everything on its own). We do this by moving the relevant folders    ---
+# --- into /workspaces/ubuntu-cloud-desktop, which lives on Codespaces'    ---
+# --- persistent workspace volume - the one location guaranteed to survive ---
+# --- both stop/resume AND rebuilds - then symlinking the usual home-      ---
+# --- directory paths back to it so nothing else has to change.            ---
+
+echo "Setting up persistent storage for downloads and browser data..."
+(
+  set +e
+
+  PERSIST_DIR="/workspaces/ubuntu-cloud-desktop/persistent-data"
+  mkdir -p "$PERSIST_DIR/Downloads" "$PERSIST_DIR/mozilla" "$PERSIST_DIR/epiphany-config" "$PERSIST_DIR/epiphany-cache"
+
+  link_to_persist() {
+    local target="$1" persist="$2"
+    if [ -L "$target" ]; then
+      return 0  # already a symlink, nothing to do
+    fi
+    if [ -d "$target" ] && [ "$(ls -A "$target" 2>/dev/null)" ]; then
+      # Real folder with existing data - migrate it in, don't lose it
+      cp -a "$target"/. "$persist"/ 2>/dev/null
+      rm -rf "$target"
+    else
+      rm -rf "$target"
+    fi
+    ln -sfn "$persist" "$target"
+  }
+
+  link_to_persist ~/Downloads "$PERSIST_DIR/Downloads"
+  link_to_persist ~/.mozilla "$PERSIST_DIR/mozilla"
+  mkdir -p ~/.config
+  link_to_persist ~/.config/epiphany "$PERSIST_DIR/epiphany-config"
+  mkdir -p ~/.cache
+  link_to_persist ~/.cache/epiphany "$PERSIST_DIR/epiphany-cache"
+
+  echo "  Downloads and browser profiles now persist in the repo's workspace folder."
+  exit 0
+)
+
 echo "Setup complete."
