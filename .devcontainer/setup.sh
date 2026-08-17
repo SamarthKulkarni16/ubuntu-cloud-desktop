@@ -90,4 +90,54 @@ PIN
 echo "Firefox step finished (see above for outcome)."
 echo "A guaranteed-working fallback browser (Epiphany / GNOME Web) is also installed - launch with: epiphany"
 
+# --- Register a real default browser so XFCE's dock/panel "Web Browser"    ---
+# --- icon actually launches something. That icon is a GENERIC launcher    ---
+# --- (exo's WebBrowser category) - it does NOT automatically point at     ---
+# --- Firefox just because Firefox is installed. Without this step,        ---
+# --- clicking it can silently do nothing even with a working browser on   ---
+# --- the system.                                                         ---
+
+echo "Registering default browser for the desktop's Web Browser launcher..."
+(
+  set +e
+
+  if command -v firefox >/dev/null 2>&1 && firefox --version >/dev/null 2>&1; then
+    DEFAULT_BROWSER_BIN="/usr/bin/firefox"
+    DEFAULT_BROWSER_NAME="firefox.desktop"
+  elif command -v epiphany >/dev/null 2>&1; then
+    DEFAULT_BROWSER_BIN="/usr/bin/epiphany"
+    DEFAULT_BROWSER_NAME="org.gnome.Epiphany.desktop"
+  else
+    echo "  No working browser found to register as default."
+    exit 0
+  fi
+
+  # System-level alternative (used by xdg-open / exo-open under the hood)
+  sudo update-alternatives --install /usr/bin/x-www-browser x-www-browser "$DEFAULT_BROWSER_BIN" 200 >/dev/null 2>&1
+  sudo update-alternatives --set x-www-browser "$DEFAULT_BROWSER_BIN" >/dev/null 2>&1
+
+  # XFCE-specific default-apps association (what the panel launcher reads)
+  mkdir -p ~/.config/xfce4
+  cat > ~/.config/xfce4/helpers.rc << HELPERS
+WebBrowser=custom-WebBrowser
+HELPERS
+  mkdir -p ~/.local/share/xfce4/helpers
+  cat > ~/.local/share/xfce4/helpers/custom-WebBrowser.desktop << CUSTOMHELPER
+[Desktop Entry]
+Version=1.0
+Type=X-XFCE-Helper
+X-XFCE-Category=WebBrowser
+X-XFCE-CommandsWithParameter=$DEFAULT_BROWSER_BIN "%s"
+X-XFCE-Commands=$DEFAULT_BROWSER_BIN
+Icon=web-browser
+Name=Default Browser
+CUSTOMHELPER
+
+  # freedesktop-level default too, in case anything reads it that way
+  xdg-settings set default-web-browser "$DEFAULT_BROWSER_NAME" >/dev/null 2>&1
+
+  echo "  Default browser registered: $DEFAULT_BROWSER_BIN"
+  exit 0
+)
+
 echo "Setup complete."
