@@ -47,43 +47,40 @@ echo "Core desktop setup complete."
 # --- (flaky download, redirect issue, rate limit, etc.) can NEVER take     ---
 # --- down the rest of the script or block start-desktop.sh from running.   ---
 
-echo "Installing real Firefox (not the Ubuntu snap redirect, which doesn't work in containers)..."
+echo "Installing real Firefox via the Mozilla Team PPA (avoids both the broken"
+echo "Ubuntu snap redirect AND the unreliable download.mozilla.org CDN, which"
+echo "does not download reliably on the Codespaces network)..."
 (
   set +e  # failures in this subshell must not kill the parent script
 
-  FIREFOX_OK=0
-  for attempt in 1 2 3; do
-    echo "  Firefox download attempt $attempt..."
-    rm -f /tmp/firefox.tar.bz2
-    wget -q --tries=2 --timeout=30 -O /tmp/firefox.tar.bz2 \
-      "https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US"
+  # Remove Ubuntu's firefox stub package if present - it's the thing that
+  # prints "requires the firefox snap to be installed" when you run firefox.
+  sudo apt-get remove -y firefox >/dev/null 2>&1
 
-    # Validate: file must exist, be non-trivial size, and actually be a
-    # bzip2 archive (catches HTML error pages / partial downloads / redirects
-    # that "succeed" as far as wget is concerned but aren't real archives).
-    if [ -s /tmp/firefox.tar.bz2 ] && file /tmp/firefox.tar.bz2 | grep -qi "bzip2"; then
-      FIREFOX_OK=1
-      break
-    else
-      echo "  Attempt $attempt produced an invalid file, retrying..."
-      sleep 3
-    fi
-  done
+  sudo add-apt-repository -y ppa:mozillateam/ppa
 
-  if [ "$FIREFOX_OK" -eq 1 ]; then
-    if sudo tar xjf /tmp/firefox.tar.bz2 -C /opt/ && [ -f /opt/firefox/firefox ]; then
-      sudo ln -sf /opt/firefox/firefox /usr/local/bin/firefox
-      echo "  Firefox installed successfully."
-    else
-      echo "  WARNING: Firefox archive extracted but binary not found as expected. Skipping Firefox install."
-    fi
+  # Pin so apt prefers the PPA's real .deb over Ubuntu's snap-redirect stub.
+  cat <<'PIN' | sudo tee /etc/apt/preferences.d/mozilla-firefox > /dev/null
+Package: *
+Pin: release o=LP-PPA-mozillateam
+Pin-Priority: 1001
+
+Package: firefox*
+Pin: release o=Ubuntu
+Pin-Priority: -1
+PIN
+
+  sudo apt-get update -y
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y firefox
+
+  if command -v firefox >/dev/null 2>&1 && firefox --version >/dev/null 2>&1; then
+    echo "  Firefox installed successfully via PPA: $(firefox --version)"
   else
-    echo "  WARNING: Firefox download failed after 3 attempts. Skipping Firefox install."
+    echo "  WARNING: Firefox PPA install did not produce a working firefox binary. Skipping Firefox install."
     echo "  You can retry later from inside the desktop terminal with:"
-    echo "    wget -O /tmp/firefox.tar.bz2 \"https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US\" && sudo tar xjf /tmp/firefox.tar.bz2 -C /opt/ && sudo ln -sf /opt/firefox/firefox /usr/local/bin/firefox"
+    echo "    sudo apt-get update && sudo apt-get install -y firefox"
   fi
 
-  rm -f /tmp/firefox.tar.bz2
   exit 0
 )
 echo "Firefox step finished (see above for outcome)."
