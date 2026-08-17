@@ -17,11 +17,16 @@ sudo -E apt-get install -y \
   websockify \
   dbus-x11 \
   x11-xserver-utils \
-  firefox \
   gedit \
   unzip \
   wget \
   curl
+
+echo "Installing real Firefox (not the Ubuntu snap redirect, which doesn't work in containers)..."
+wget -q -O /tmp/firefox.tar.bz2 "https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US"
+sudo tar xjf /tmp/firefox.tar.bz2 -C /opt/
+sudo ln -sf /opt/firefox/firefox /usr/local/bin/firefox
+rm -f /tmp/firefox.tar.bz2
 
 echo "Setting up VNC password..."
 mkdir -p ~/.vnc
