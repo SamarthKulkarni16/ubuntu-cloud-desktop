@@ -6,7 +6,9 @@ sudo apt-get update -y
 
 echo "Installing XFCE desktop, VNC server, and noVNC..."
 export DEBIAN_FRONTEND=noninteractive
-sudo apt-get install -y \
+sudo debconf-set-selections <<< "tzdata tzdata/Areas select Asia"
+sudo debconf-set-selections <<< "tzdata tzdata/Zones/Asia select Kolkata"
+sudo -E apt-get install -y \
   xfce4 \
   xfce4-goodies \
   tigervnc-standalone-server \
