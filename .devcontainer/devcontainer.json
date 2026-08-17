@@ -1,19 +1,15 @@
 {
-  "name": "Ubuntu Cloud Desktop",
+  "name": "Ubuntu XFCE Desktop",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-  "features": {
-    "ghcr.io/devcontainers/features/desktop-lite:1": {
-      "password": "ubuntu"
-    }
-  },
   "forwardPorts": [6080],
   "portsAttributes": {
     "6080": {
-      "label": "Ubuntu Desktop",
+      "label": "Ubuntu XFCE Desktop",
       "onAutoForward": "openBrowser"
     }
   },
   "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "bash .devcontainer/start-desktop.sh",
   "customizations": {
     "codespaces": {
       "openFiles": []

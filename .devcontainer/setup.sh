@@ -4,14 +4,35 @@ set -e
 echo "Updating package lists..."
 sudo apt-get update -y
 
-echo "Installing Firefox, file manager, and basic desktop utilities..."
+echo "Installing XFCE desktop, VNC server, and noVNC..."
+export DEBIAN_FRONTEND=noninteractive
 sudo apt-get install -y \
+  xfce4 \
+  xfce4-goodies \
+  tigervnc-standalone-server \
+  tigervnc-common \
+  novnc \
+  websockify \
+  dbus-x11 \
+  x11-xserver-utils \
   firefox \
-  pcmanfm \
-  xterm \
   gedit \
   unzip \
   wget \
   curl
 
-echo "Setup complete. Open port 6080 in the Ports tab to reach your Ubuntu desktop."
+echo "Setting up VNC password..."
+mkdir -p ~/.vnc
+echo "ubuntu" | vncpasswd -f > ~/.vnc/passwd
+chmod 600 ~/.vnc/passwd
+
+echo "Configuring XFCE as the VNC session..."
+cat > ~/.vnc/xstartup << 'XSTART'
+#!/bin/sh
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+exec startxfce4
+XSTART
+chmod +x ~/.vnc/xstartup
+
+echo "Setup complete."
