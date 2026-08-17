@@ -5,7 +5,8 @@
   "portsAttributes": {
     "6080": {
       "label": "Ubuntu XFCE Desktop",
-      "onAutoForward": "openBrowser"
+      "onAutoForward": "openBrowser",
+      "visibility": "public"
     }
   },
   "postCreateCommand": "bash .devcontainer/setup.sh",
