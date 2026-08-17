@@ -20,7 +20,9 @@ sudo -E apt-get install -y \
   gedit \
   unzip \
   wget \
-  curl
+  curl \
+  software-properties-common \
+  epiphany-browser
 
 # --- Critical desktop config: must always complete, regardless of what      ---
 # --- happens later (e.g. Firefox download flaking). Do this BEFORE anything ---
@@ -79,10 +81,13 @@ PIN
     echo "  WARNING: Firefox PPA install did not produce a working firefox binary. Skipping Firefox install."
     echo "  You can retry later from inside the desktop terminal with:"
     echo "    sudo apt-get update && sudo apt-get install -y firefox"
+    echo "  In the meantime, Epiphany (GNOME Web) is installed as a working fallback browser."
+    echo "  Launch it from the dock, or run: epiphany"
   fi
 
   exit 0
 )
 echo "Firefox step finished (see above for outcome)."
+echo "A guaranteed-working fallback browser (Epiphany / GNOME Web) is also installed - launch with: epiphany"
 
 echo "Setup complete."
